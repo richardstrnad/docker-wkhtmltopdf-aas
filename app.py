@@ -26,7 +26,7 @@ def application(request):
 
     request_is_json = request.content_type.endswith('json')
 
-    with tempfile.NamedTemporaryFile(suffix='.html') as source_file:
+    with tempfile.NamedTemporaryFile(suffix='.html', delete=False) as source_file:
 
         if request_is_json:
             # If a JSON payload is there, all data is in the payload
@@ -51,17 +51,27 @@ def application(request):
                 if value:
                     args.append('"%s"' % value)
 
-        # Add source file name and output file name
-        file_name = source_file.name
-        args += [file_name, file_name + ".pdf"]
+        # Check if footer is present
+        if payload.get('footer'):
+            with tempfile.NamedTemporaryFile(suffix='.html', delete=False) as footer_source_file:
+                footer_source_file.write(payload['footer'].decode('base64'))
 
-        # Execute the command using executor
-        execute(' '.join(args))
+                args += ['--footer-html ' + footer_source_file.name]
 
-        return Response(
-            wrap_file(request.environ, open(file_name + '.pdf')),
-            mimetype='application/pdf',
-        )
+                footer_source_file.flush()
+
+
+    # Add source file name and output file name
+    file_name = source_file.name
+    args += [file_name, file_name + ".pdf"]
+
+    # Execute the command using executor
+    execute(' '.join(args))
+
+    return Response(
+        wrap_file(request.environ, open(file_name + '.pdf')),
+        mimetype='application/pdf',
+    )
 
 
 if __name__ == '__main__':
