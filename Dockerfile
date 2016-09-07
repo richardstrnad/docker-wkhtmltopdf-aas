@@ -3,7 +3,7 @@ MAINTAINER Sharoon Thomas <sharoon.thomas@openlabs.co.in>
 
 # Install dependencies for running web service
 RUN apt-get install -y python-pip
-RUN pip install werkzeug executor gunicorn
+RUN pip install -r requirements.txt
 
 ADD app.py /app.py
 EXPOSE 80
